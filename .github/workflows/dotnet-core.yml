@@ -5,7 +5,10 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-
+env:
+  AZURE_WEBAPP_NAME: apitestegha    # set this to your application's name
+  AZURE_WEBAPP_PACKAGE_PATH: '.' 
+  
 jobs:
   build:
 
@@ -24,4 +27,18 @@ jobs:
     - name: Test
       run: dotnet test --no-restore --verbosity normal
     
+    # Run dotnet build and publish
+    - name: dotnet build and publish
+      run: |
+        dotnet build --configuration Release
+        dotnet publish -c Release -o '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/myapp' 
+
+    # Deploy to Azure Web apps
+    - name: 'Run Azure webapp deploy action using publish profile credentials'
+      uses: azure/webapps-deploy@v2
+      with: 
+        app-name: ${{ env.AZURE_WEBAPP_NAME }} # Replace with your app name
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE  }} # Define secret variable in repository settings as per action documentation
+        package: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/myapp'
+
       
